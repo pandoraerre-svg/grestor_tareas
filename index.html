@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestor de Tareas y Actividades Personal</title>
+    <title>Gestor de Tareas y Actividades Personal - Google Sync</title>
+    <!-- Tailwind CSS & FontAwesome -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -24,6 +25,8 @@
         }
     </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Identity Services Library for OAuth2 -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; }
@@ -43,19 +46,35 @@
                 </div>
                 <div>
                     <h1 class="font-bold text-lg leading-tight">TaskManager Pro</h1>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">Gestor Personal & Google Sync</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Google Calendar & Tasks API Native Sync</p>
                 </div>
             </div>
 
-            <div class="flex items-center space-x-2 sm:space-x-4">
+            <div class="flex items-center space-x-2 sm:space-x-3">
+                <!-- Google Sign-In Status / Button -->
+                <button id="btn-google-auth" onclick="handleAuthClick()" class="flex items-center space-x-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 px-3 py-1.5 rounded-xl text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-600 transition-all shadow-sm">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                    </svg>
+                    <span id="google-auth-text">Conectar Google</span>
+                </button>
+
+                <!-- API Settings Config Modal Toggle -->
+                <button onclick="openApiModal()" class="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors" title="Configurar API de Google">
+                    <i class="fa-solid fa-gear text-lg"></i>
+                </button>
+
                 <button id="btn-weekly-alert" class="relative p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors" title="Alertas Semanales">
-                    <i class="fa-regular fa-bell text-xl"></i>
+                    <i class="fa-regular fa-bell text-lg"></i>
                     <span id="alert-badge" class="hidden absolute top-1 right-1 w-2.5 h-2.5 bg-rose-500 rounded-full ring-2 ring-white dark:ring-slate-800"></span>
                 </button>
 
                 <button id="btn-theme-toggle" class="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
-                    <i class="fa-solid fa-moon dark:hidden text-xl"></i>
-                    <i class="fa-solid fa-sun hidden dark:block text-xl"></i>
+                    <i class="fa-solid fa-moon dark:hidden text-lg"></i>
+                    <i class="fa-solid fa-sun hidden dark:block text-lg"></i>
                 </button>
 
                 <button id="btn-open-modal" class="bg-brand-500 hover:bg-brand-600 text-white px-3 sm:px-4 py-2 rounded-xl text-sm font-medium transition-all shadow-sm flex items-center space-x-2">
@@ -126,24 +145,29 @@
 
             <!-- Export & Sync Tools -->
             <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-3">
-                <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Sincronización</h3>
+                <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Herramientas de Exportación</h3>
+                <button onclick="syncAllToGoogleTasks()" class="w-full text-left px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl flex items-center space-x-2 border border-slate-200 dark:border-slate-700">
+                    <i class="fa-solid fa-cloud-arrow-up text-brand-500"></i>
+                    <span>Sincronizar a Google Tasks API</span>
+                </button>
                 <button onclick="exportToICS()" class="w-full text-left px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl flex items-center space-x-2 border border-slate-200 dark:border-slate-700">
-                    <i class="fa-solid fa-calendar-arrow-down text-brand-500"></i>
-                    <span>Exportar a iCal (.ics)</span>
+                    <i class="fa-solid fa-calendar-arrow-down text-emerald-500"></i>
+                    <span>Exportar Archivo iCal (.ics)</span>
                 </button>
                 <button onclick="exportToGoogleTasksJSON()" class="w-full text-left px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl flex items-center space-x-2 border border-slate-200 dark:border-slate-700">
-                    <i class="fa-solid fa-file-export text-emerald-500"></i>
-                    <span>Exportar Datos (Google Tasks)</span>
+                    <i class="fa-solid fa-file-code text-amber-500"></i>
+                    <span>Descargar Backup JSON</span>
                 </button>
             </div>
         </aside>
 
+        <!-- Main Task Area & Views -->
         <main class="flex-1 flex flex-col space-y-4 min-w-0">
             <!-- View Selector Tabs & Search Bar -->
             <div class="bg-white dark:bg-slate-800 p-3 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3">
                 <div class="flex items-center bg-slate-100 dark:bg-slate-900 p-1 rounded-xl w-full sm:w-auto overflow-x-auto">
                     <button data-view="kanban" class="view-btn px-4 py-1.5 text-xs font-semibold rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 shadow-sm">
-                        <i class="fa-solid fa-kanban-board mr-1.5"></i>Tablero
+                        <i class="fa-solid fa-kanban-board mr-1.5"></i>Tablero Tracker
                     </button>
                     <button data-view="day" class="view-btn px-4 py-1.5 text-xs font-semibold rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-700">
                         Día
@@ -158,7 +182,7 @@
 
                 <div class="relative w-full sm:w-64">
                     <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
-                    <input type="text" id="search-input" placeholder="Buscar tarea..." class="w-full pl-8 pr-3 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    <input type="text" id="search-input" placeholder="Buscar tarea o paso..." class="w-full pl-8 pr-3 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-brand-500">
                 </div>
             </div>
 
@@ -201,6 +225,7 @@
                 </div>
             </div>
 
+            <!-- View 2: CALENDAR VIEW -->
             <div id="view-calendar" class="hidden bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex-1 flex flex-col">
                 <div class="flex items-center justify-between mb-4">
                     <div class="flex items-center space-x-3">
@@ -284,16 +309,65 @@
                     <ul id="subtasks-list" class="space-y-1.5 max-h-32 overflow-y-auto custom-scrollbar"></ul>
                 </div>
 
-                <div class="flex justify-end space-x-3 pt-3 border-t border-slate-200 dark:border-slate-700">
-                    <button type="button" id="btn-cancel-modal" class="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl">Cancelar</button>
-                    <button type="submit" class="px-4 py-2 text-xs font-semibold bg-brand-500 hover:bg-brand-600 text-white rounded-xl shadow-sm">Guardar Tarea</button>
+                <div class="flex justify-between items-center pt-3 border-t border-slate-200 dark:border-slate-700">
+                    <label class="flex items-center space-x-2 text-xs text-slate-500 cursor-pointer">
+                        <input type="checkbox" id="form-auto-sync" class="rounded text-brand-500" checked>
+                        <span>Enviar a Google Calendar al guardar</span>
+                    </label>
+
+                    <div class="flex space-x-2">
+                        <button type="button" id="btn-cancel-modal" class="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl">Cancelar</button>
+                        <button type="submit" class="px-4 py-2 text-xs font-semibold bg-brand-500 hover:bg-brand-600 text-white rounded-xl shadow-sm">Guardar Tarea</button>
+                    </div>
                 </div>
             </form>
         </div>
     </div>
 
+    <div id="api-modal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-3">
+                <h3 class="font-bold text-lg flex items-center space-x-2">
+                    <i class="fa-brands fa-google text-brand-500"></i>
+                    <span>Configurar Google OAuth & Client ID</span>
+                </h3>
+                <button onclick="closeApiModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+
+            <p class="text-xs text-slate-500 dark:text-slate-400">
+                Para activar la sincronización directa sin salir de esta web, ingresa tu Client ID de Google Cloud Console.
+            </p>
+
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1">Google OAuth Client ID</label>
+                    <input type="text" id="cfg-client-id" placeholder="123456789-xyz.apps.googleusercontent.com" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                </div>
+
+                <div class="p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-xs space-y-2">
+                    <span class="font-bold block text-slate-700 dark:text-slate-300">¿Cómo obtener tu Client ID en 3 pasos?</span>
+                    <ol class="list-decimal pl-4 space-y-1 text-slate-500 dark:text-slate-400">
+                        <li>Entra a <a href="https://console.cloud.google.com/" target="_blank" class="text-brand-500 underline">Google Cloud Console</a> y crea un proyecto.</li>
+                        <li>Activa las APIs de <strong>Google Calendar API</strong> y <strong>Google Tasks API</strong>.</li>
+                        <li>Ve a <em>Credenciales</em> > <em>Crear credenciales</em> > <em>ID de cliente OAuth (Aplicación web)</em> y agrega la URL de tu repositorio de GitHub Pages como origen autorizado.</li>
+                    </ol>
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-3 pt-3 border-t border-slate-200 dark:border-slate-700">
+                <button onclick="closeApiModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl">Cancelar</button>
+                <button onclick="saveApiSettings()" class="px-4 py-2 text-xs font-semibold bg-brand-500 hover:bg-brand-600 text-white rounded-xl shadow-sm">Guardar Credencial</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // Default Initial Data Setup
+        // App State
+        let googleAccessToken = null;
+        let tokenClient = null;
+
+        let googleClientId = localStorage.getItem('google_client_id') || '';
+
         let tasks = JSON.parse(localStorage.getItem('taskmanager_tasks')) || [
             {
                 id: '1',
@@ -313,7 +387,7 @@
                 title: 'Comprar boletos para festival verbena',
                 category: 'verbena',
                 status: 'por-iniciar',
-                date: new Date(Date.now() - 86400000).toISOString().split('T')[0], // Overdue
+                date: new Date(Date.now() - 86400000).toISOString().split('T')[0],
                 priority: 'P1',
                 urgency: 'Alta',
                 subtasks: []
@@ -335,13 +409,13 @@
         let calendarDate = new Date();
         let tempSubtasks = [];
 
-        // Save State
+        // Save Local State
         function saveState() {
             localStorage.setItem('taskmanager_tasks', JSON.stringify(tasks));
             render();
         }
 
-        // Theme Toggle
+        // Theme Toggle Setup
         const themeBtn = document.getElementById('btn-theme-toggle');
         themeBtn.addEventListener('click', () => {
             document.documentElement.classList.toggle('dark');
@@ -349,6 +423,60 @@
         });
         if (localStorage.getItem('theme') === 'dark') {
             document.documentElement.classList.add('dark');
+        }
+
+        // Initialize Google Identity Token Client
+        window.onload = function() {
+            if (googleClientId) {
+                initGoogleClient();
+            }
+            render();
+        };
+
+        function initGoogleClient() {
+            if (window.google && google.accounts) {
+                tokenClient = google.accounts.oauth2.initTokenClient({
+                    client_id: googleClientId,
+                    scope: 'https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/tasks',
+                    callback: (tokenResponse) => {
+                        if (tokenResponse.access_token) {
+                            googleAccessToken = tokenResponse.access_token;
+                            document.getElementById('google-auth-text').textContent = 'Google Conectado';
+                            document.getElementById('btn-google-auth').classList.add('bg-emerald-50', 'text-emerald-700', 'border-emerald-300');
+                        }
+                    },
+                });
+            }
+        }
+
+        function handleAuthClick() {
+            if (!googleClientId) {
+                openApiModal();
+                return;
+            }
+            if (tokenClient) {
+                tokenClient.requestAccessToken();
+            }
+        }
+
+        function openApiModal() {
+            document.getElementById('cfg-client-id').value = googleClientId;
+            document.getElementById('api-modal').classList.remove('hidden');
+        }
+
+        function closeApiModal() {
+            document.getElementById('api-modal').classList.add('hidden');
+        }
+
+        function saveApiSettings() {
+            const id = document.getElementById('cfg-client-id').value.trim();
+            googleClientId = id;
+            localStorage.setItem('google_client_id', id);
+            closeApiModal();
+            if (id) {
+                initGoogleClient();
+                alert("Client ID guardado correctamente. Ahora puedes hacer clic en 'Conectar Google'.");
+            }
         }
 
         // Render Controller
@@ -365,7 +493,6 @@
             }
         }
 
-        // Filter Logic
         function getFilteredTasks() {
             const query = document.getElementById('search-input').value.toLowerCase();
             return tasks.filter(task => {
@@ -378,27 +505,22 @@
         function updateCountsAndAlerts() {
             const todayStr = new Date().toISOString().split('T')[0];
             let overdueCount = 0;
-
             const counts = { all: 0, casa: 0, familia: 0, verbena: 0, mascotas: 0 };
 
             tasks.forEach(task => {
                 counts.all++;
                 if (counts[task.category] !== undefined) counts[task.category]++;
-
-                if (task.date < todayStr && task.status !== 'terminada') {
-                    overdueCount++;
-                }
+                if (task.date < todayStr && task.status !== 'terminada') overdueCount++;
             });
 
-            // Update UI Counters
             Object.keys(counts).forEach(cat => {
                 const badge = document.getElementById(`count-${cat}`);
                 if (badge) badge.textContent = counts[cat];
             });
 
+            document.getElementById('overdue-count').textContent = overdueCount;
             const overdueBanner = document.getElementById('overdue-banner');
             const alertBadge = document.getElementById('alert-badge');
-            document.getElementById('overdue-count').textContent = overdueCount;
 
             if (overdueCount > 0) {
                 overdueBanner.classList.remove('hidden');
@@ -409,7 +531,7 @@
             }
         }
 
-        // Category Buttons
+        // Category Filter Buttons
         document.querySelectorAll('.filter-cat-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.filter-cat-btn').forEach(b => {
@@ -435,7 +557,6 @@
             });
         });
 
-        // Search Input
         document.getElementById('search-input').addEventListener('input', render);
 
         function renderKanban() {
@@ -447,13 +568,11 @@
             };
 
             Object.keys(cols).forEach(key => cols[key].innerHTML = '');
-
             const statusCounts = { 'por-iniciar': 0, 'en-proceso': 0, 'terminada': 0 };
 
             filtered.forEach(task => {
                 statusCounts[task.status]++;
-                const card = createCardElement(task);
-                cols[task.status].appendChild(card);
+                cols[task.status].appendChild(createCardElement(task));
             });
 
             document.getElementById('badge-por-iniciar').textContent = statusCounts['por-iniciar'];
@@ -513,10 +632,15 @@
                 ` : ''}
 
                 <div class="pt-2 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between text-xs">
-                    <a href="${gCalUrl}" target="_blank" rel="noopener noreferrer" class="text-brand-600 dark:text-brand-400 hover:underline flex items-center space-x-1" title="Añadir a Google Calendar">
-                        <i class="fa-solid fa-calendar-plus"></i>
-                        <span class="text-[11px]">G-Calendar</span>
-                    </a>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="pushTaskToGoogleCalendar('${task.id}')" class="text-brand-600 dark:text-brand-400 hover:underline flex items-center space-x-1 text-[11px]" title="Enviar directo vía API de Calendar">
+                            <i class="fa-solid fa-cloud-arrow-up"></i>
+                            <span>API Sync</span>
+                        </button>
+                        <a href="${gCalUrl}" target="_blank" rel="noopener noreferrer" class="text-slate-400 hover:text-slate-600 text-[11px]" title="Abrir URL rápida">
+                            <i class="fa-solid fa-external-link"></i>
+                        </a>
+                    </div>
                     
                     <div class="flex items-center space-x-2">
                         <button onclick="editTask('${task.id}')" class="text-slate-400 hover:text-brand-500 p-1"><i class="fa-solid fa-pen"></i></button>
@@ -527,12 +651,12 @@
             return el;
         }
 
+        // Calendar Renderers
         function renderCalendar() {
             const calContent = document.getElementById('cal-content');
             const calTitle = document.getElementById('cal-title');
             const year = calendarDate.getFullYear();
             const month = calendarDate.getMonth();
-
             const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 
             if (currentView === 'month') {
@@ -580,7 +704,6 @@
                     </div>
                 `;
             }
-
             html += `</div>`;
             container.innerHTML = html;
         }
@@ -591,7 +714,7 @@
 
             container.innerHTML = `
                 <div class="space-y-3">
-                    <h3 class="text-sm font-semibold text-slate-500">Actividades programadas para hoy:</h3>
+                    <h3 class="text-sm font-semibold text-slate-500">Actividades programadas:</h3>
                     ${dayTasks.length === 0 ? '<p class="text-xs text-slate-400">No hay tareas programadas para este día.</p>' : ''}
                     <div class="space-y-2">
                         ${dayTasks.map(t => `
@@ -600,7 +723,7 @@
                                     <h4 class="font-bold text-sm">${t.title}</h4>
                                     <span class="text-xs text-slate-400 capitalize">${t.category} • Prioridad ${t.priority}</span>
                                 </div>
-                                <button onclick="editTask('${t.id}')" class="text-xs px-3 py-1 bg-brand-500 text-white rounded-lg">Ver / Editar</button>
+                                <button onclick="editTask('${t.id}')" class="text-xs px-3 py-1 bg-brand-500 text-white rounded-lg">Editar</button>
                             </div>
                         `).join('')}
                     </div>
@@ -611,7 +734,6 @@
         function renderYearView(container, year) {
             const months = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
             const filteredTasks = getFilteredTasks();
-
             let html = `<div class="grid grid-cols-3 sm:grid-cols-4 gap-3">`;
 
             months.forEach((m, idx) => {
@@ -628,7 +750,6 @@
                     </div>
                 `;
             });
-
             html += `</div>`;
             container.innerHTML = html;
         }
@@ -653,13 +774,11 @@
             renderCalendar();
         });
 
+        // Task Modal Controls
         const modal = document.getElementById('task-modal');
         const form = document.getElementById('task-form');
 
-        document.getElementById('btn-open-modal').addEventListener('click', () => {
-            openModal();
-        });
-
+        document.getElementById('btn-open-modal').addEventListener('click', () => openModal());
         document.getElementById('btn-close-modal').addEventListener('click', closeModal);
         document.getElementById('btn-cancel-modal').addEventListener('click', closeModal);
 
@@ -683,7 +802,6 @@
             form.reset();
         }
 
-        // Subtasks Handling
         document.getElementById('btn-add-subtask').addEventListener('click', () => {
             const input = document.getElementById('subtask-input');
             if (input.value.trim()) {
@@ -719,6 +837,8 @@
         form.addEventListener('submit', (e) => {
             e.preventDefault();
             const id = document.getElementById('task-id').value;
+            const autoSync = document.getElementById('form-auto-sync').checked;
+
             const newTask = {
                 id: id || Date.now().toString(),
                 title: document.getElementById('form-title').value.trim(),
@@ -738,6 +858,11 @@
             }
 
             saveState();
+
+            if (autoSync) {
+                pushTaskToGoogleCalendar(newTask.id);
+            }
+
             closeModal();
         });
 
@@ -752,7 +877,6 @@
         }
 
         function filterByOverdue() {
-            const todayStr = new Date().toISOString().split('T')[0];
             document.getElementById('search-input').value = '';
             currentCategory = 'all';
             render();
@@ -763,6 +887,78 @@
             const details = encodeURIComponent(`Categoría: ${task.category}\nUrgencia: ${task.urgency}\nEstado: ${task.status}`);
             const dateFormatted = task.date.replace(/-/g, '');
             return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}&dates=${dateFormatted}/${dateFormatted}`;
+        }
+
+        // Direct Google API Sync Implementations
+        async function pushTaskToGoogleCalendar(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) return;
+
+            if (!googleAccessToken) {
+                window.open(generateGoogleCalendarUrl(task), '_blank');
+                return;
+            }
+
+            const eventBody = {
+                summary: `[${task.priority}] ${task.title}`,
+                description: `Categoría: ${task.category}\nUrgencia: ${task.urgency}\nEstado Tracker: ${task.status}\nSubtareas:\n` + task.subtasks.map(s => `- ${s.completed ? '[x]' : '[ ]'} ${s.title}`).join('\n'),
+                start: { date: task.date },
+                end: { date: task.date }
+            };
+
+            try {
+                const response = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${googleAccessToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(eventBody)
+                });
+
+                if (response.ok) {
+                    alert(`✅ Evento "${task.title}" creado exitosamente en tu Google Calendar.`);
+                } else {
+                    alert("Error al conectar con Google Calendar API. Redirigiendo a enlace directo...");
+                    window.open(generateGoogleCalendarUrl(task), '_blank');
+                }
+            } catch (err) {
+                console.error(err);
+                window.open(generateGoogleCalendarUrl(task), '_blank');
+            }
+        }
+
+        async function syncAllToGoogleTasks() {
+            if (!googleAccessToken) {
+                alert("Por favor presiona 'Conectar Google' en la barra superior antes de enviar tareas a Google Tasks API.");
+                handleAuthClick();
+                return;
+            }
+
+            let successCount = 0;
+            for (const task of tasks) {
+                try {
+                    const taskBody = {
+                        title: `[${task.priority}] ${task.title} (${task.category})`,
+                        notes: `Urgencia: ${task.urgency} | Estado: ${task.status}\nPasos:\n` + task.subtasks.map(s => `- ${s.title}`).join('\n'),
+                        due: new Date(task.date).toISOString()
+                    };
+
+                    const res = await fetch('https://tasks.googleapis.com/tasks/v1/users/@default/lists/@default/tasks', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${googleAccessToken}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(taskBody)
+                    });
+                    if (res.ok) successCount++;
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+
+            alert(`🎉 Se han sincronizado ${successCount} tareas directamente con tu lista principal de Google Tasks.`);
         }
 
         function exportToICS() {
@@ -791,11 +987,10 @@
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(tasks, null, 2));
             const dlAnchorElem = document.createElement('a');
             dlAnchorElem.setAttribute("href", dataStr);
-            dlAnchorElem.setAttribute("download", "google_tasks_export.json");
+            dlAnchorElem.setAttribute("download", "google_tasks_backup.json");
             dlAnchorElem.click();
         }
 
-        // Weekly Alert Button
         document.getElementById('btn-weekly-alert').addEventListener('click', () => {
             const todayStr = new Date().toISOString().split('T')[0];
             const overdue = tasks.filter(t => t.date < todayStr && t.status !== 'terminada');
@@ -805,9 +1000,6 @@
                 alert("🎉 ¡Felicidades! No tienes tareas retrasadas esta semana.");
             }
         });
-
-        // Initialize Render
-        render();
     </script>
 </body>
 </html>
